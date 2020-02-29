@@ -1,0 +1,6 @@
+ipython
+django==2.2.4
+djangorestframework==3.11.0
+uwsgi==2.0.18
+ipdb
+django-constance[database]==2.6.0

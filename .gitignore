@@ -1,0 +1,19 @@
+# python stuff
+*.pyc
+*.pyo
+__pycache__
+
+*.egg
+*.egg-info
+
+# docker stuff
+.env
+.db
+
+# vim swap file
+*.swp
+
+# compiled gettext-files
+# *.mo
+build
+
