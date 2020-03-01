@@ -35,8 +35,10 @@ class PaymentTransactionManager(models.Manager):
             destination=destination,
             status=constants.PaymentTransactionStatus.SCHEDULED,
             amount=amount,
-            taxes=None if with_taxes else 0,
+            currency=source.currency,
         )
+        if with_taxes:
+            transaction.set_tax_account()
         if settings.IMMEDIATELY_RATE:
             transaction.set_rate_and_taxes()
         transaction.save()

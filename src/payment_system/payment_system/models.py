@@ -4,7 +4,7 @@ from functools import lru_cache
 from constance import config
 
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 
 from payment_system.fields import MoneyField
 from payment_system.managers import (
@@ -90,28 +90,73 @@ class PaymentTransaction(models.Model):
 
     source = models.ForeignKey(
         Account,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         related_name='outgoing_transactions',
     )
     destination = models.ForeignKey(
         Account,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         related_name='incoming_transactions',
     )
+    taxes_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='+',
+    )
     amount = MoneyField()
+    # Denormalized field. Currency is always equal to source.currency
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
     taxes = MoneyField(null=True)
     status = models.TextField(choices=statuses.CHOICES)
 
+    def set_taxes_account(self):
+        self.taxes_account_id = (
+            Account.objects.filter(type=Account.types.TAXES_ACCOUNT)
+            .values_list('id', flat=True)
+            .get()
+        )
 
     def set_rate_and_taxes(self):
         chain = ExchangeRate.get_chain(self.source.currency_id, self.destination.currency_id)
         if chain:
             ExchangeChain.objects.from_exchange_sequence(self, chain)
-        self.state = self.statuses.RATE_CALCULATED
-        if self.taxes is None:
+        self.state = constants.PaymentTransaction.RATE_CALCULATED
+        if self.taxes_account_id:
             self.taxes = config.TAXES * self.amount
+
+    def _lock(self):
+        taxes_account_id = self.taxes_account_id
+        locked_self = (
+            PaymentTransaction.objects
+            .select_related('source', 'destination')
+            .select_for_update()
+            .get(id=self.id)
+        )
+        locked_taxes_account = None
+        if taxes_account_id:
+            locked_taxes_account = Account.objects.select_for_update().get(id=taxes_account_id)
+        return (locked_self, locked_taxes_account)
+
+    @transaction.atomic
+    def complete(self):
+        transaction, taxes_account = self._lock()
+        if transaction.status == constants.PaymentTransactionStatus.COMPLETED:
+            return
+        if transaction.source.amount < transaction.amount:
+            transaction.status = constants.PaymentTransactionStatus.REJECTED
+        else:
+            transaction.source.amount -= transaction.amount
+            if taxes_account:
+                taxes_account.amount += transaction.taxes
+                transaction.destination.amount +=  transaction.amount - transaction.taxes
+                taxes_account.save(update_fields=['amount'])
+            else:
+                transaction.destination.amount +=  transaction.amount
+            transaction.status = constants.PaymentTransactionStatus.COMPLETED
+        transaction.save(update_fields=['status'])
+        transaction.source.save(update_fields=['amount'])
+        transaction.destination.save(update_fields=['amount'])
 
 
 class ExchangeChain(models.Model):

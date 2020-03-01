@@ -12,12 +12,12 @@ class AccountType(object):
 class PaymentTransactionStatus(object):
     SCHEDULED = 'scheduled'
     RATE_CALCULATED = 'rate_calculated'
-    IN_PROGRESS = 'in_progress'
     COMPLETED = 'completed'
+    REJECTED = 'rejected'
 
     CHOICES = [
         (SCHEDULED, 'Scheduled'),
-        (IN_PROGRESS, 'In progress'),
         (COMPLETED, 'Completed'),
         (RATE_CALCULATED, 'Rate calculated'),
+        (REJECTED, 'rejected'),
     ]

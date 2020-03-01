@@ -7,7 +7,7 @@ from payment_system.management.commands.add_init_data import Command as InitData
 from payment_system import settings
 
 
-class TestModels(TestCase):
+class TestTransactions(TestCase):
 
     def setUp(self):
         InitData().handle()
@@ -44,8 +44,31 @@ class TestModels(TestCase):
             amount=100,
         )
 
+    def tearDown(self):
+        PaymentTransaction.objects.all().delete()
+
     def test_add_transaction(self):
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, False, 5)
         self.assertEqual(transaction.source, self.alan_acc_u1)
         self.assertEqual(transaction.destination, self.alan_acc_u2)
         self.assertEqual(transaction.status, PaymentTransaction.statuses.SCHEDULED)
+
+    def test_complete_transaction(self):
+        transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, False, 5)
+        transaction.complete()
+        transaction.refresh_from_db()
+        self.alan_acc_u1.refresh_from_db()
+        self.alan_acc_u2.refresh_from_db()
+        self.assertEqual(transaction.status, PaymentTransaction.statuses.COMPLETED)
+        self.assertEqual(self.alan_acc_u1.amount, 95)
+        self.assertEqual(self.alan_acc_u2.amount, 105)
+
+    def test_reject_transaction(self):
+        transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, False, 200)
+        transaction.complete()
+        transaction.refresh_from_db()
+        self.alan_acc_u1.refresh_from_db()
+        self.alan_acc_u2.refresh_from_db()
+        self.assertEqual(transaction.status, PaymentTransaction.statuses.REJECTED)
+        self.assertEqual(self.alan_acc_u1.amount, 100)
+        self.assertEqual(self.alan_acc_u2.amount, 100)

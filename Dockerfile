@@ -20,6 +20,8 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
 # Install all deps
+RUN apt-get install wget curl gnupg -y
+RUN wget -O - "https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey" | apt-key add -
 RUN cat /deps/ubuntu.txt | xargs apt-get install -y
 RUN pip3 install -r /deps/python.txt
 RUN rm -r /deps
