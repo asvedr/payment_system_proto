@@ -26,6 +26,6 @@ urlpatterns = [
     path('sign_in/', views.SignInView.as_view()),
     path('login/', auth_views.obtain_auth_token),
     path('check_balance/', views.AccountsView.as_view()),
-    # path('transmit/', ),
+    path('transactions/', views.PaymentTransactionView.as_view()),
     # path('history/'),
 ]

@@ -3,11 +3,12 @@ from django.db import transaction
 
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.authentication import BasicAuthentication, TokenAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from payment_system import models, serializers
+from payment_system import models, serializers, tasks
 from payment_system.responses import ErrorResponse
 
 
@@ -46,3 +47,26 @@ class AccountsView(APIView):
         return Response({
             'result': serializer.data
         })
+
+
+class PaymentTransactionView(APIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = serializers.PaymentTransactionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return ErrorResponse(str(serializer.errors))
+        data = serializer.validated_data
+        from_account = data['source']
+        to_account = data['destination']
+        if from_account.user != request.user:
+            return ErrorResponse('You are not account\'s owner')
+        transaction = models.PaymentTransaction.objects.request(
+            from_account,
+            to_account,
+            from_account.user_id != to_account.user_id,
+            data['amount'],
+        )
+        tasks.complete_transactions.apply_async(args=[transaction.id])
+        return Response({'result': serializers.OutgoingTransactionSerializer(transaction).data})
