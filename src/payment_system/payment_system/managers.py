@@ -9,7 +9,7 @@ class CurrencyManager(models.Manager):
 
     @lru_cache(maxsize=1)
     def base_currency_id(self):
-        self.filter(slug=settings.BASE_CURRENCY)
+        return self.get(slug=settings.BASE_CURRENCY).id
 
 
 class ExchangeChainManager(models.Manager):

@@ -34,22 +34,22 @@ class ExchangeRate(models.Model):
     @classmethod
     def _get_actual_rate(cls, from_currency_id, to_currency_id):
         return (
-            cls.objects.filter(source_id=from_currency, destination_id=to_currency)
+            cls.objects.filter(source_id=from_currency_id, destination_id=to_currency_id)
             .order_by('-time')
             .first()
         )
 
 
     @classmethod
-    def get_chain(cls, from_currency, to_currency):
-        if from_currency == to_currency:
+    def get_chain(cls, from_currency_id, to_currency_id):
+        if from_currency_id == to_currency_id:
             return []
-        rate = cls._get_actual_rate(from_currency.id, to_currency.id)
+        rate = cls._get_actual_rate(from_currency_id, to_currency_id)
         if rate:
             return [rate]
         base_id = Currency.objects.base_currency_id()
-        step1 = cls._get_actual_rate(from_currency.id, base_id)
-        step2 = cls._get_actual_rate(base_id, to_currency.id)
+        step1 = cls._get_actual_rate(from_currency_id, base_id)
+        step2 = cls._get_actual_rate(base_id, to_currency_id)
         return [step1, step2]
 
 
@@ -101,7 +101,7 @@ class PaymentTransaction(models.Model):
     amount = MoneyField()
     # Denormalized field. Currency is always equal to source.currency
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
-    taxes = MoneyField(null=True)
+    taxes = MoneyField(default=0)
     status = models.TextField(choices=statuses.CHOICES)
 
     def set_rate_and_taxes(self):
@@ -120,6 +120,17 @@ class PaymentTransaction(models.Model):
             .get(id=self.id)
         )
 
+    def calculate_money_to_sub(self):
+        result_money = self.amount + self.taxes
+        rate_chain = (
+            self.exchange_chain.order_by('-order')
+            .select_related('exchange_rate')
+            .values_list('exchange_rate__rate', flat=True)
+        )
+        for rate in rate_chain:
+            result_money *= rate
+        return result_money
+
     @transaction.atomic
     def complete(self):
         transaction = self._lock()
@@ -127,15 +138,15 @@ class PaymentTransaction(models.Model):
             return
         if transaction.status == constants.PaymentTransactionStatus.SCHEDULED:
             transaction.set_rate_and_taxes()
-        if transaction.source.amount < transaction.amount:
+        money_to_sub = transaction.calculate_money_to_sub()
+        if transaction.source.amount < money_to_sub:
             transaction.status = constants.PaymentTransactionStatus.REJECTED
         else:
-            transaction.source.amount -= transaction.amount
+            transaction.source.amount -= money_to_sub
+            transaction.destination.amount += transaction.amount
             if transaction.with_taxes:
-                transaction.destination.amount += transaction.amount - transaction.taxes
                 transaction.status = constants.PaymentTransactionStatus.USER_MONEY_TRANSMITTED
             else:
-                transaction.destination.amount += transaction.amount
                 transaction.status = constants.PaymentTransactionStatus.COMPLETED
         transaction.save()
         transaction.source.save(update_fields=['amount'])
