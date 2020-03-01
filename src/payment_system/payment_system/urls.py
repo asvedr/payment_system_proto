@@ -16,6 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from rest_framework.authtoken import views as auth_views
+
+from payment_system import views
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('sign_in/', views.SignInView.as_view()),
+    path('login/', auth_views.obtain_auth_token),
+    path('check_balance/', views.AccountsView.as_view()),
+    # path('transmit/', ),
+    # path('history/'),
 ]

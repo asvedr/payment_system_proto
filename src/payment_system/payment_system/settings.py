@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'constance',
     'payment_system.apps.PaymentSystemConfig',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'payment_system.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -119,6 +122,10 @@ USE_TZ = True
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_CONFIG = {
     'TAXES': (decimal.Decimal(0.1), 'Tax on transaction between users'),
+    'INIT_ACCOUNTS': (
+        {'USD': 100, 'EUR': 0, 'CNY': 0},
+        'Accounts that must be created with user',
+    )
 }
 
 # Static files (CSS, JavaScript, Images)

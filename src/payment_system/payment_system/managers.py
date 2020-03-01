@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from constance import config
 from django.db import models, transaction
 
 from payment_system import settings, constants
@@ -58,3 +59,21 @@ class AccountManager(models.Manager):
             for currency in currencies
         ]
         self.bulk_create(accounts)
+
+    def create_init_user_set(self, user):
+        from payment_system.models import Currency
+
+        init_dict = config.INIT_ACCOUNTS
+        currency_cache = dict(
+            Currency.objects.filter(slug__in=init_dict.keys())
+            .values_list('slug', 'id')
+        )
+        self.bulk_create([
+            self.model(
+                currency_id=currency_cache[key],
+                amount=value,
+                user=user,
+                type=self.model.types.USER_ACCOUNT,
+            )
+            for key, value in init_dict.items()
+        ])
