@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import decimal
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -115,8 +116,9 @@ USE_L10N = True
 
 USE_TZ = True
 
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_CONFIG = {
-    'TAXES': (0.3, 'Tax on transaction between users'),
+    'TAXES': (decimal.Decimal(0.1), 'Tax on transaction between users'),
 }
 
 # Static files (CSS, JavaScript, Images)

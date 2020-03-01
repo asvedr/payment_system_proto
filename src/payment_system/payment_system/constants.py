@@ -12,6 +12,7 @@ class AccountType(object):
 class PaymentTransactionStatus(object):
     SCHEDULED = 'scheduled'
     RATE_CALCULATED = 'rate_calculated'
+    USER_MONEY_TRANSMITTED = 'user_money_transmitter'
     COMPLETED = 'completed'
     REJECTED = 'rejected'
 
@@ -20,4 +21,5 @@ class PaymentTransactionStatus(object):
         (COMPLETED, 'Completed'),
         (RATE_CALCULATED, 'Rate calculated'),
         (REJECTED, 'rejected'),
+        (USER_MONEY_TRANSMITTED, 'User money transmitter')
     ]

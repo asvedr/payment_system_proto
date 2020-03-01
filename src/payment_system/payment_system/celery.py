@@ -2,7 +2,7 @@ import os
 
 from celery import Celery
 
-from serje import settings
+from payment_system import settings
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'serje.settings')
