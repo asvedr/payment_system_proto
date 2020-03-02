@@ -68,17 +68,8 @@ class RequestTransactionView(APIView):
             from_account.user_id != to_account.user_id,
             data['amount'],
         )
-        tasks.complete_transactions.apply_async(args=[transaction.id])
+        # tasks.complete_transactions.apply_async(args=[transaction.id])
         return Response({'result': serializers.OutgoingTransactionSerializer(transaction).data})
-
-    def get(self, request):
-        filter = filters.PaymentTransactionFilter(
-            data=request.GET,
-            queryset=models.PaymentTransaction.objects.of_user(request.user),
-            request=request,
-        )
-        import ipdb; ipdb.set_trace()
-        pass
 
 
 class BaseTransactionView(viewsets.ModelViewSet):
@@ -123,4 +114,7 @@ class IncomingTransactionsView(BaseTransactionView):
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
-        return queryset.filter(destination__user=self.request.user)
+        return queryset.filter(
+            destination__user=self.request.user,
+            status__in=models.PaymentTransaction.statuses.SUCCESS_STATUSES,
+        )

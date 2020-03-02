@@ -14,6 +14,11 @@ class BaseTestApi(TestCase):
         self.client = JsonClient()
         self.client.json_post('/sign_in/', {'username': 'alan', 'password': '1'})
         self.client.json_post('/sign_in/', {'username': 'joseph', 'password': '1'})
+        (
+            models.Account.objects
+                .filter(user__username='alan', currency__slug='EUR')
+                .update(amount=100)
+        )
         response = self.client.post('/login/', {'username': 'alan', 'password': '1'})
         self.client.token = response.json()['token']
         self.alan = User.objects.get(username='alan')
@@ -30,7 +35,7 @@ class TestApi(BaseTestApi):
         self.assertEqual(
             [
                 {'currency': 'USD', 'description': 'USA United States Dollar', 'amount': '100.00'},
-                {'currency': 'EUR', 'description': 'European Euro', 'amount': '0.00'},
+                {'currency': 'EUR', 'description': 'European Euro', 'amount': '100.00'},
                 {'currency': 'CNY', 'description': 'Chinese Yuán', 'amount': '0.00'},
             ],
             response_data
@@ -58,6 +63,7 @@ class TestApi(BaseTestApi):
                 'amount': '10.00',
                 'currency': 'USD',
                 'processed_at': None,
+                'spent': '0.00',
             },
             response_data
         )
@@ -72,6 +78,7 @@ class TestGetTransaction(BaseTestApi):
         self.transaction1 = models.PaymentTransaction.objects.request(self.acc1, self.acc2, True, 30)
         self.transaction2 = models.PaymentTransaction.objects.request(self.acc2, self.acc1, True, 20)
         self.transaction3 = models.PaymentTransaction.objects.request(self.acc1, self.acc2, True, 10)
+        self.transaction4 = models.PaymentTransaction.objects.request(self.acc2, self.acc1, True, 999)
         tasks.complete_transactions()
 
     def test_outgoing_ordering(self):
@@ -97,6 +104,7 @@ class TestGetTransaction(BaseTestApi):
                         'destination': 'USD',
                         'rate': '1.10',
                     }],
+                    'spent': '36.30',
                     'amount': '30.00',
                     'currency': 'USD',
                 },
@@ -111,6 +119,7 @@ class TestGetTransaction(BaseTestApi):
                         'destination': 'USD',
                         'rate': '1.10',
                     }],
+                    'spent': '12.10',
                     'amount': '10.00',
                     'currency': 'USD',
                 }

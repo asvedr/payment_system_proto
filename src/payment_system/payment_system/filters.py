@@ -14,7 +14,8 @@ class OutgoingTransactionFilter(filterset.FilterSet):
             'destination': ['exact'],
             'status': ['exact', 'in'],
             'amount': ['gte', 'lte', 'exact'],
-            'currency': ['exact', 'in']
+            'currency': ['exact', 'in'],
+            'spent': ['gte', 'lte', 'exact'],
         }
 
 
@@ -27,5 +28,5 @@ class IncomingTransactionFilter(filterset.FilterSet):
             'created_at': ['gte', 'lte', 'exact'],
             'processed_at': ['gte', 'lte', 'exact'],
             'source': ['exact'],
-            'amount': ['gte', 'lte', 'exact']
+            'amount': ['gte', 'lte', 'exact'],
         }

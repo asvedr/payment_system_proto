@@ -106,6 +106,7 @@ class PaymentTransaction(models.Model):
     status = models.TextField(choices=statuses.CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True)
+    spent = MoneyField(default=0)
 
     def set_rate_and_taxes(self):
         chain = ExchangeRate.get_chain(self.source.currency_id, self.destination.currency_id)
@@ -146,6 +147,7 @@ class PaymentTransaction(models.Model):
             transaction.status = constants.PaymentTransactionStatus.REJECTED
         else:
             transaction.source.amount -= money_to_sub
+            transaction.spent = money_to_sub
             transaction.destination.amount += transaction.amount
             if transaction.with_taxes:
                 transaction.status = constants.PaymentTransactionStatus.USER_MONEY_TRANSMITTED

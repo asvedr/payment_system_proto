@@ -51,7 +51,7 @@ class OutgoingTransactionSerializer(PaymentTransactionSerializer):
     exchange = serializers.SerializerMethodField(read_only=True)
 
     class Meta(PaymentTransactionSerializer.Meta):
-        fields = PaymentTransactionSerializer.Meta.fields + ['status', 'taxes', 'exchange']
+        fields = PaymentTransactionSerializer.Meta.fields + ['status', 'taxes', 'exchange', 'spent']
 
     def get_exchange(self, instance):
         exchange_chain = list(instance.exchange_chain.all())
@@ -64,7 +64,7 @@ class OutgoingTransactionSerializer(PaymentTransactionSerializer):
         ).data
 
     def get_status(self, instance):
-        if instance.status in models.PaymentTransaction.statuses.FINISHED_STATUSES:
+        if instance.status in models.PaymentTransaction.statuses.SUCCESS_STATUSES:
             return models.PaymentTransaction.statuses.COMPLETED
         else:
             return instance.status
