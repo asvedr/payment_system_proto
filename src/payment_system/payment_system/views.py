@@ -68,7 +68,7 @@ class RequestTransactionView(APIView):
             from_account.user_id != to_account.user_id,
             data['amount'],
         )
-        # tasks.complete_transactions.apply_async(args=[transaction.id])
+        tasks.complete_transactions.apply_async(args=[transaction.id])
         return Response({'result': serializers.OutgoingTransactionSerializer(transaction).data})
 
 

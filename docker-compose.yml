@@ -3,16 +3,38 @@ services:
     test:
         build:
             context: .
+            dockerfile: Dockerfile
             args:
                 MODE: develop
-        command: "/bin/bash /entrypoint.sh"
-        network_mode: host
+        command: "/bin/bash /test_entrypoint.sh"
+        ports:
+            - "8080:8080"
         volumes:
             - ./src:/src
+            - ./scripts:/scripts
+        environment:
+            DBMODE: sqlite
     prod:
         build:
             context: .
+            dockerfile: Dockerfile
             args:
                 MODE: production
         command: "/bin/bash /entrypoint.sh"
-        network_mode: host
+        ports:
+            - "127.0.0.1:8080:8080"
+        volumes:
+            - ./src:/src
+            - ./scripts:/scripts 
+        depends_on:
+            - database
+        links:
+            - "database:database"
+    database:
+        image: postgres:10
+        logging:
+            driver: none
+        environment:
+            POSTGRES_PASSWORD: paysys
+            POSTGRES_USER: paysys
+            POSTGRES_DB: paysys

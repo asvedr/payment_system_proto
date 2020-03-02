@@ -3,3 +3,4 @@ python3-pip
 vim
 libpq-dev
 rabbitmq-server
+postgresql-client-10

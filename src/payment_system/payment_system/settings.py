@@ -26,8 +26,6 @@ SECRET_KEY = '7f-a!an#8t+a1hr%dw0-dc9#tfy3e!m7b!j(zfr_!0c!_ip+m@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -80,13 +78,27 @@ WSGI_APPLICATION = 'payment_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
+_db_engines = {
+    'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    },
+    'postgres': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('PGDBNAME'),
+        'USER' : os.environ.get('PGUSER'),
+        'PASSWORD' : os.environ.get('PGPASSWORD'),
+        'HOST' : os.environ.get('PGHOST'),
+        'PORT' : '5432',
+    },
 }
 
+DBMODE = os.environ.get('DBMODE', 'sqlite')
+DATABASES = {
+    'default': _db_engines[DBMODE]
+}
+
+ALLOWED_HOSTS = ['*']
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

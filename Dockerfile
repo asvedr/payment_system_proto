@@ -5,15 +5,12 @@ ENV DOCKER_MODE=$MODE
 
 # Copy data
 COPY deps /deps
-COPY src /src
 RUN apt-get update
 RUN apt-get install gpg -y
 RUN apt-key add /deps/pg.asc
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/pgdg.list
 COPY entrypoint.sh /entrypoint.sh
 COPY test_entrypoint.sh /test_entrypoint.sh
-
-RUN if [ "$MODE" = "develop" ] ; then rm -r /src; mv /test_entrypoint.sh /entrypoint.sh; else rm /test_entrypoint.sh; fi
 
 RUN apt-get update
 

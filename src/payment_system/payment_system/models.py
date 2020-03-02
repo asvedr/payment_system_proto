@@ -21,7 +21,7 @@ class Currency(models.Model):
 
     objects = CurrencyManager()
 
-    slug = models.SlugField()
+    slug = models.SlugField(db_index=True, unique=True)
     description = models.TextField()
 
 
@@ -30,7 +30,6 @@ class ExchangeRate(models.Model):
     destination = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
     rate = MoneyField()
     time = models.DateTimeField(db_index=True, auto_now_add=True)
-
 
     @classmethod
     def _get_actual_rate(cls, from_currency_id, to_currency_id):
@@ -60,9 +59,9 @@ class Account(models.Model):
 
     types = constants.AccountType
 
-    type = models.TextField(choices=types.CHOICES)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name='accounts')
+    type = models.TextField(choices=types.CHOICES, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_index=True)
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name='accounts', db_index=True)
     amount = MoneyField(default=0)
 
     class Meta:
@@ -79,6 +78,10 @@ class Account(models.Model):
                     models.Q(type=constants.AccountType.TAXES_ACCOUNT)
                 )
             ),
+            models.CheckConstraint(
+                name='amount_gte_0',
+                check=models.Q(amount__gte=0)
+            ),
         ]
 
 
@@ -92,11 +95,13 @@ class PaymentTransaction(models.Model):
         Account,
         on_delete=models.CASCADE,
         related_name='outgoing_transactions',
+        db_index=True,
     )
     destination = models.ForeignKey(
         Account,
         on_delete=models.CASCADE,
         related_name='incoming_transactions',
+        db_index=True,
     )
     with_taxes = models.BooleanField(default=False)
     amount = MoneyField()
@@ -104,8 +109,8 @@ class PaymentTransaction(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
     taxes = MoneyField(default=0)
     status = models.TextField(choices=statuses.CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-    processed_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    processed_at = models.DateTimeField(null=True, db_index=True)
     spent = MoneyField(default=0)
 
     def set_rate_and_taxes(self):
@@ -166,11 +171,13 @@ class ExchangeChain(models.Model):
     transaction = models.ForeignKey(
         PaymentTransaction,
         on_delete=models.CASCADE,
-        related_name='exchange_chain'
+        related_name='exchange_chain',
+        db_index=True,
     )
     exchange_rate = models.ForeignKey(
         ExchangeRate,
         on_delete=models.PROTECT,
-        related_name='+'
+        related_name='+',
+        db_index=True,
     )
     order = models.IntegerField()
