@@ -86,7 +86,7 @@ class TestGetTransaction(BaseTestApi):
             transaction.refresh_from_db()
         response = self.client.get('/outgoing/?ordering=created_at')
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        data = response.json()['results']
         for row in data:
             del row['processed_at']
             del row['created_at']
@@ -128,19 +128,19 @@ class TestGetTransaction(BaseTestApi):
         )
         response = self.client.get('/outgoing/?ordering=amount')
         self.assertEqual(response.status_code, 200)
-        id_list = [row['id'] for row in response.json()]
+        id_list = [row['id'] for row in response.json()['results']]
         self.assertEqual([self.transaction3.id, self.transaction1.id], id_list)
 
     def test_filters_outgoing(self):
         response = self.client.get('/outgoing/?amount=30')
         self.assertEqual(response.status_code, 200)
-        id_list = [row['id'] for row in response.json()]
+        id_list = [row['id'] for row in response.json()['results']]
         self.assertEqual([self.transaction1.id], id_list)
 
     def test_incoming_transactions(self):
         response = self.client.get('/incoming/')
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        data = response.json()['results']
         for row in data:
             del row['processed_at']
             del row['created_at']
