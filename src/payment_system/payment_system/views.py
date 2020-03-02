@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from payment_system import models, serializers, tasks
+from payment_system import models, serializers, tasks, filters
 from payment_system.responses import ErrorResponse
 
 
@@ -49,7 +49,7 @@ class AccountsView(APIView):
         })
 
 
-class PaymentTransactionView(APIView):
+class RequestTransactionView(APIView):
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
     
@@ -70,3 +70,57 @@ class PaymentTransactionView(APIView):
         )
         tasks.complete_transactions.apply_async(args=[transaction.id])
         return Response({'result': serializers.OutgoingTransactionSerializer(transaction).data})
+
+    def get(self, request):
+        filter = filters.PaymentTransactionFilter(
+            data=request.GET,
+            queryset=models.PaymentTransaction.objects.of_user(request.user),
+            request=request,
+        )
+        import ipdb; ipdb.set_trace()
+        pass
+
+
+class BaseTransactionView(viewsets.ModelViewSet):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    ordering_fields = ['created_at', 'processed_at']
+
+    def get_queryset(self):
+        field = self.request.GET.get('ordering')
+        queryset = self.queryset
+        if field in self.ordering_fields:
+            queryset = queryset.order_by(field)
+        return queryset
+
+
+class OutgoingTransactionsView(BaseTransactionView):
+    serializer_class = serializers.OutgoingTransactionSerializer
+    filter_class = filters.OutgoingTransactionFilter
+    queryset = (
+        models.PaymentTransaction.objects
+        .prefetch_related(
+            'currency',
+            'exchange_chain',
+            'exchange_chain__exchange_rate',
+            'exchange_chain__exchange_rate__source',
+            'exchange_chain__exchange_rate__destination',
+        )
+    )
+    ordering_fields = BaseTransactionView.ordering_fields + ['destination', 'amount', 'spent']
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(source__user=self.request.user)
+
+
+class IncomingTransactionsView(BaseTransactionView):
+    serializer_class = serializers.PaymentTransactionSerializer
+    filter_class = filters.IncomingTransactionFilter
+    queryset = models.PaymentTransaction.objects.prefetch_related('currency')
+    ordering_fields = BaseTransactionView.ordering_fields + ['source', 'amount']
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        return queryset.filter(destination__user=self.request.user)

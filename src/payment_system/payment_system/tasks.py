@@ -10,7 +10,7 @@ def complete_transactions(transaction_id=None):
     if transaction_id:
         transactions = PaymentTransaction.objects.filter(id=transaction_id)
     else:
-        transactions = PaymentTransaction.objects.incompleted()
+        transactions = PaymentTransaction.objects.incompleted().order_by('created_at')
     for transaction in transactions:
         transaction.complete()
 

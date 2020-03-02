@@ -5,6 +5,7 @@ from constance import config
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
+from django.utils import timezone
 
 from payment_system.fields import MoneyField
 from payment_system.managers import (
@@ -103,6 +104,8 @@ class PaymentTransaction(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
     taxes = MoneyField(default=0)
     status = models.TextField(choices=statuses.CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True)
 
     def set_rate_and_taxes(self):
         chain = ExchangeRate.get_chain(self.source.currency_id, self.destination.currency_id)
@@ -148,6 +151,7 @@ class PaymentTransaction(models.Model):
                 transaction.status = constants.PaymentTransactionStatus.USER_MONEY_TRANSMITTED
             else:
                 transaction.status = constants.PaymentTransactionStatus.COMPLETED
+        transaction.processed_at = timezone.now()
         transaction.save()
         transaction.source.save(update_fields=['amount'])
         transaction.destination.save(update_fields=['amount'])

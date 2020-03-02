@@ -26,6 +26,7 @@ urlpatterns = [
     path('sign_in/', views.SignInView.as_view()),
     path('login/', auth_views.obtain_auth_token),
     path('check_balance/', views.AccountsView.as_view()),
-    path('transactions/', views.PaymentTransactionView.as_view()),
-    # path('history/'),
+    path('request-transaction/', views.RequestTransactionView.as_view()),
+    path('incoming/', views.IncomingTransactionsView.as_view({'get': 'list'})),
+    path('outgoing/', views.OutgoingTransactionsView.as_view({'get': 'list'})),
 ]

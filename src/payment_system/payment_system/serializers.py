@@ -19,8 +19,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
 class ExchangeRateSerializer(serializers.ModelSerializer):
     
-    source = serializers.CharField()
-    destination = serializers.CharField()
+    source = serializers.CharField(source='source.slug')
+    destination = serializers.CharField(source='destination.slug')
     rate = serializers.CharField()
     time = serializers.DateTimeField()
 
@@ -38,26 +38,20 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
         queryset=models.Account.objects.all(),
     )
     amount = fields.MoneySerializerField()
-
-    class Meta:
-        model = models.PaymentTransaction
-        fields = ['source', 'destination', 'amount']
-
-
-class OutgoingTransactionSerializer(PaymentTransactionSerializer):
-
-    status = serializers.CharField(read_only=True)
-    taxes = serializers.SerializerMethodField(read_only=True)
-    exchange = serializers.SerializerMethodField(read_only=True)
     currency = serializers.CharField(source='currency.slug', read_only=True)
 
     class Meta:
         model = models.PaymentTransaction
-        fields = ['source', 'destination', 'status', 'taxes', 'exchange', 'amount', 'currency']
+        fields = ['id', 'source', 'destination', 'amount', 'currency', 'created_at', 'processed_at']
 
-    def get_taxes(self, instance):
-        if instance.taxes:
-            return f'{instance.taxes} {instance.currency.slug}'
+
+class OutgoingTransactionSerializer(PaymentTransactionSerializer):
+
+    status = serializers.SerializerMethodField(read_only=True)
+    exchange = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(PaymentTransactionSerializer.Meta):
+        fields = PaymentTransactionSerializer.Meta.fields + ['status', 'taxes', 'exchange']
 
     def get_exchange(self, instance):
         exchange_chain = list(instance.exchange_chain.all())
@@ -68,3 +62,9 @@ class OutgoingTransactionSerializer(PaymentTransactionSerializer):
             (item.exchange_rate for item in exchange_chain),
             many=True
         ).data
+
+    def get_status(self, instance):
+        if instance.status in models.PaymentTransaction.statuses.FINISHED_STATUSES:
+            return models.PaymentTransaction.statuses.COMPLETED
+        else:
+            return instance.status

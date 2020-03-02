@@ -7,3 +7,5 @@ django-constance[database]==2.6.0
 psycopg2==2.8.4
 pika==1.1.0
 celery==4.3.0
+django-filter==2.0
+djangorestframework-filters==0.11.1

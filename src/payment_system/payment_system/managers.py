@@ -3,7 +3,7 @@ from functools import lru_cache
 from constance import config
 from django.db import models, transaction
 
-from payment_system import settings, constants
+from payment_system import settings, constants, querysets
 
 
 class CurrencyManager(models.Manager):
@@ -27,7 +27,7 @@ class ExchangeChainManager(models.Manager):
         self.bulk_create(steps)
 
 
-class PaymentTransactionManager(models.Manager):
+class PaymentTransactionManager(models.Manager.from_queryset(querysets.PaymentTransactionQuerySet)):
 
     @transaction.atomic
     def request(self, source, destination, with_taxes, amount):

@@ -3,10 +3,10 @@ class AccountType(object):
     USER_ACCOUNT = 'user_account'
     TAXES_ACCOUNT = 'taxes_account'
 
-    CHOICES = [
+    CHOICES = (
         (USER_ACCOUNT, 'User account'),
         (TAXES_ACCOUNT, 'Taxes account')
-    ]
+    )
 
 
 class PaymentTransactionStatus(object):
@@ -16,10 +16,21 @@ class PaymentTransactionStatus(object):
     COMPLETED = 'completed'
     REJECTED = 'rejected'
 
-    CHOICES = [
+    CHOICES = (
         (SCHEDULED, 'Scheduled'),
         (COMPLETED, 'Completed'),
         (RATE_CALCULATED, 'Rate calculated'),
         (REJECTED, 'rejected'),
         (USER_MONEY_TRANSMITTED, 'User money transmitter')
-    ]
+    )
+
+    SUCCESS_STATUSES = (
+        USER_MONEY_TRANSMITTED,
+        COMPLETED,
+    )
+
+    FINISHED_STATUSES = (
+        USER_MONEY_TRANSMITTED,
+        COMPLETED,
+        REJECTED,
+    )
