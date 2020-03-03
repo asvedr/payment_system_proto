@@ -8,14 +8,13 @@ class OutgoingTransactionFilter(filterset.FilterSet):
     class Meta:
         model = PaymentTransaction
         fields = {
-            'id': ['exact'],
-            'created_at': ['gte', 'lte', 'exact'],
-            'processed_at': ['gte', 'lte', 'exact'],
+            'created_at': ['gt', 'lt', 'gte', 'lte', 'exact'],
+            'processed_at': ['gt', 'lt', 'gte', 'lte', 'exact'],
             'destination': ['exact'],
             'status': ['exact', 'in'],
-            'amount': ['gte', 'lte', 'exact'],
+            'amount': ['gt', 'lt', 'gte', 'lte', 'exact'],
             'currency': ['exact', 'in'],
-            'spent': ['gte', 'lte', 'exact'],
+            'spent': ['gt', 'lt', 'gte', 'lte', 'exact'],
         }
 
 
@@ -24,9 +23,8 @@ class IncomingTransactionFilter(filterset.FilterSet):
     class Meta:
         model = PaymentTransaction
         fields = {
-            'id': ['exact'],
-            'created_at': ['gte', 'lte', 'exact'],
-            'processed_at': ['gte', 'lte', 'exact'],
+            'created_at': ['gt', 'lt', 'gte', 'lte', 'exact'],
+            'processed_at': ['gt', 'lt', 'gte', 'lte', 'exact'],
             'source': ['exact'],
-            'amount': ['gte', 'lte', 'exact'],
+            'amount': ['gt', 'lt', 'gte', 'lte', 'exact'],
         }
