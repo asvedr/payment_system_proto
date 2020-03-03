@@ -121,12 +121,13 @@ class PaymentTransaction(models.Model):
         if self.with_taxes:
             self.taxes = config.TAXES * self.amount
 
-    def _lock(self):
+    @classmethod
+    def _lock(cls, transaction_id):
         return (
             PaymentTransaction.objects
             .select_related('source', 'destination')
             .select_for_update()
-            .get(id=self.id)
+            .get(id=transaction_id)
         )
 
     def calculate_money_to_sub(self):
@@ -140,28 +141,33 @@ class PaymentTransaction(models.Model):
             result_money *= rate
         return result_money
 
-    @transaction.atomic
-    def complete(self):
-        transaction = self._lock()
-        if transaction.status == constants.PaymentTransactionStatus.COMPLETED:
+    def _do_complete(self):
+        if self.status in constants.PaymentTransactionStatus.FINISHED_STATUSES:
             return
-        if transaction.status == constants.PaymentTransactionStatus.SCHEDULED:
-            transaction.set_rate_and_taxes()
-        money_to_sub = transaction.calculate_money_to_sub()
-        if transaction.source.amount < money_to_sub:
-            transaction.status = constants.PaymentTransactionStatus.REJECTED
+        if self.status == constants.PaymentTransactionStatus.SCHEDULED:
+            self.set_rate_and_taxes()
+        money_to_sub = self.calculate_money_to_sub()
+        if self.source.amount < money_to_sub:
+            self.status = constants.PaymentTransactionStatus.REJECTED
         else:
-            transaction.source.amount -= money_to_sub
-            transaction.spent = money_to_sub
-            transaction.destination.amount += transaction.amount
-            if transaction.with_taxes:
-                transaction.status = constants.PaymentTransactionStatus.USER_MONEY_TRANSMITTED
+            self.source.amount -= money_to_sub
+            self.spent = money_to_sub
+            self.destination.amount += self.amount
+            if self.with_taxes:
+                self.status = constants.PaymentTransactionStatus.USER_MONEY_TRANSMITTED
             else:
-                transaction.status = constants.PaymentTransactionStatus.COMPLETED
-        transaction.processed_at = timezone.now()
-        transaction.save()
-        transaction.source.save(update_fields=['amount'])
-        transaction.destination.save(update_fields=['amount'])
+                self.status = constants.PaymentTransactionStatus.COMPLETED
+        self.processed_at = timezone.now()
+        self.save()
+        self.source.save(update_fields=['amount'])
+        self.destination.save(update_fields=['amount'])
+
+    @classmethod
+    @transaction.atomic
+    def complete(cls, transaction_id):
+        transaction = cls._lock(transaction_id)
+        transaction._do_complete()
+
 
 
 class ExchangeChain(models.Model):

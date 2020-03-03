@@ -11,11 +11,16 @@ from payment_system.celery import app
 @periodic_task(run_every=timezone.timedelta(minutes=5))
 def complete_transactions(transaction_id=None):
     if transaction_id:
-        transactions = PaymentTransaction.objects.filter(id=transaction_id)
+        transactions = [transaction_id]
     else:
-        transactions = PaymentTransaction.objects.incompleted().order_by('created_at')
-    for transaction in transactions:
-        transaction.complete()
+        transactions = (
+            PaymentTransaction.objects
+            .incompleted()
+            .order_by('created_at')
+            .values_list('id', flat=True)
+        )
+    for transaction_id in transactions:
+        PaymentTransaction.complete(transaction_id)
 
 
 @transaction.atomic

@@ -50,7 +50,7 @@ class TestTransactions(TestCase):
 
     def test_complete_transaction_noexchange_notaxes(self):
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, False, 5)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)
         transaction.refresh_from_db()
         self.alan_acc_u1.refresh_from_db()
         self.alan_acc_u2.refresh_from_db()
@@ -60,7 +60,7 @@ class TestTransactions(TestCase):
 
     def test_reject_transaction(self):
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, False, 200)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)
         transaction.refresh_from_db()
         self.alan_acc_u1.refresh_from_db()
         self.alan_acc_u2.refresh_from_db()
@@ -70,7 +70,7 @@ class TestTransactions(TestCase):
 
     def test_complete_transaction_noexchange_taxes(self):
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_u2, True, 10)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)        
         transaction.refresh_from_db()
         self.alan_acc_u1.refresh_from_db()
         self.alan_acc_u2.refresh_from_db()
@@ -98,7 +98,7 @@ class TestTransactions(TestCase):
             rate=2.0,
         )
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_e, False, 10)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)
         transaction.refresh_from_db()
         self.alan_acc_u1.refresh_from_db()
         self.alan_acc_e.refresh_from_db()
@@ -113,7 +113,7 @@ class TestTransactions(TestCase):
             rate=2.0,
         )
         transaction = PaymentTransaction.objects.request(self.alan_acc_u1, self.alan_acc_e, True, 10)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)
         collect_taxes()
         transaction.refresh_from_db()
         self.alan_acc_u1.refresh_from_db()
@@ -137,7 +137,7 @@ class TestTransactions(TestCase):
             rate=3.0,
         )
         transaction = PaymentTransaction.objects.request(self.alan_acc_e, self.alan_acc_c, False, 10)
-        transaction.complete()
+        PaymentTransaction.complete(transaction.id)
         transaction.refresh_from_db()
         self.alan_acc_e.refresh_from_db()
         self.alan_acc_c.refresh_from_db()
