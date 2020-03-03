@@ -105,7 +105,6 @@ class PaymentTransaction(models.Model):
     )
     with_taxes = models.BooleanField(default=False)
     amount = MoneyField()
-    # Denormalized field. Currency is always equal to source.currency
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='+')
     taxes = MoneyField(default=0)
     status = models.TextField(choices=statuses.CHOICES)
