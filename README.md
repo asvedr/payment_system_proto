@@ -107,7 +107,7 @@ Response 200
 Допустимые поля для фильтрации: `created_at`, `processed_at`, `source`, `amount`
 Для `created_at`, `processed_at` и `amount` доступны модификаторы: `__gt`, `__lt`, `__gte`, `__lte`
 
-### Получить историю входящих переводов
+### Получить историю исходящих переводов
 ```
 GET /outgoing/
 Response 200
