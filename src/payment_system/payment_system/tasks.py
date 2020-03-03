@@ -1,11 +1,14 @@
+from celery.decorators import periodic_task
+
 from django.db import transaction
 from django.db.models import Sum
+from django.utils import timezone
 
 from payment_system.models import PaymentTransaction, Account
 from payment_system.celery import app
 
 
-@app.task
+@periodic_task(run_every=timezone.timedelta(minutes=5))
 def complete_transactions(transaction_id=None):
     if transaction_id:
         transactions = PaymentTransaction.objects.filter(id=transaction_id)
@@ -29,7 +32,7 @@ def collect_taxes_for_currency(account_id, currency):
         transactions_to_collect.update(status=PaymentTransaction.statuses.COMPLETED)
 
 
-@app.task
+@periodic_task(run_every=timezone.timedelta(minutes=5))
 def collect_taxes():
     taxes_accounts = (
         Account.objects.filter(type=Account.types.TAXES_ACCOUNT)
